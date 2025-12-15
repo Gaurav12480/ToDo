@@ -1,6 +1,6 @@
 package com.example.todo.ui
 
-import androidx.compose.foundation.gestures.scrollable
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeContentPadding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
@@ -30,6 +29,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -42,16 +42,21 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.todo.R
-import com.example.todo.data.list
 import com.example.todo.model.TodoItem
 
 @Composable
-fun TodoListPage(modifier: Modifier = Modifier) {
+fun TodoListPage(modifier: Modifier = Modifier, todoViewModel: TodoViewModel = viewModel()) {
+    val todoList by todoViewModel.todoList.collectAsState()
     Scaffold(
         modifier = modifier.safeDrawingPadding(),
         topBar = { TodoTopAppBar() },
-        bottomBar = { TodoItemAdd() }
+        bottomBar = {
+            TodoItemAdd(
+                onAddTodo = { todoViewModel.addTodo(it) }
+            )
+        }
     ) { padding ->
 
         Column(
@@ -60,14 +65,14 @@ fun TodoListPage(modifier: Modifier = Modifier) {
                 .fillMaxSize()
         ) {
             TodoClearAllButton()
-            TodoList(list = list)
+            TodoList(list = todoList)
         }
     }
 }
 
 
 @Composable
-fun TodoItemAdd(modifier: Modifier = Modifier) {
+fun TodoItemAdd(modifier: Modifier = Modifier, onAddTodo: (String) -> Unit) {
     var text by rememberSaveable { mutableStateOf("") }
 
     BottomAppBar(
@@ -76,9 +81,13 @@ fun TodoItemAdd(modifier: Modifier = Modifier) {
         TextField(
             value = text,
             onValueChange = { text = it },
-            leadingIcon = {
+            trailingIcon = {
                 IconButton(
-                    onClick = {},
+                    onClick = {
+                        onAddTodo(text)
+                        text = ""
+                    }
+
                 ) {
                     Icon(
                         imageVector = Icons.Default.Add,
@@ -88,7 +97,7 @@ fun TodoItemAdd(modifier: Modifier = Modifier) {
             },
             label = {
                 Text(
-                    text = "Add Item"
+                    text = "Add task..."
                 )
             },
             singleLine = true,
