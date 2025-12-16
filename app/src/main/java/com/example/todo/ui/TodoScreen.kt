@@ -48,13 +48,14 @@ import com.example.todo.model.TodoItem
 
 @Composable
 fun TodoListPage(modifier: Modifier = Modifier, todoViewModel: TodoViewModel = viewModel()) {
-    val todoList by todoViewModel.todoList.collectAsState()
+    val todoList by todoViewModel.todoListState.collectAsState()
     Scaffold(
         modifier = modifier.safeDrawingPadding(),
         topBar = { TodoTopAppBar() },
         bottomBar = {
-            TodoItemAdd(
+            TodoAddItem(
                 onAddTodo = { todoViewModel.addTodo(it) }
+
             )
         }
     ) { padding ->
@@ -64,15 +65,27 @@ fun TodoListPage(modifier: Modifier = Modifier, todoViewModel: TodoViewModel = v
                 .padding(padding)
                 .fillMaxSize()
         ) {
-            TodoClearAllButton()
-            TodoList(list = todoList)
+            TodoClearAllButton(
+                clearAll = {
+                    todoViewModel.clearAll()
+                },
+                color = if (todoList.isNotEmpty()) {
+                    Color(0, 150, 255)
+                } else {
+                    Color(192, 192, 192)
+                }
+            )
+            TodoList(
+                list = todoList,
+                delete = { todoViewModel.deleteTodo(id = it) }
+            )
         }
     }
 }
 
 
 @Composable
-fun TodoItemAdd(modifier: Modifier = Modifier, onAddTodo: (String) -> Unit) {
+fun TodoAddItem(modifier: Modifier = Modifier, onAddTodo: (String) -> Unit) {
     var text by rememberSaveable { mutableStateOf("") }
 
     BottomAppBar(
@@ -109,7 +122,7 @@ fun TodoItemAdd(modifier: Modifier = Modifier, onAddTodo: (String) -> Unit) {
 }
 
 @Composable
-fun TodoList(modifier: Modifier = Modifier, list: List<TodoItem>) {
+fun TodoList(modifier: Modifier = Modifier, list: List<TodoItem>, delete: (Int) -> Unit) {
     Column(modifier = modifier.verticalScroll(rememberScrollState())) {
         list.forEach { ele ->
             Box(modifier = Modifier.fillMaxWidth()) {
@@ -128,7 +141,7 @@ fun TodoList(modifier: Modifier = Modifier, list: List<TodoItem>) {
                     textDecoration = if (check) TextDecoration.LineThrough else TextDecoration.None
                 )
                 IconButton(
-                    onClick = {},
+                    onClick = {delete(ele.id)},
                     modifier = Modifier.align(Alignment.CenterEnd)
                 ) {
                     Icon(
@@ -143,15 +156,15 @@ fun TodoList(modifier: Modifier = Modifier, list: List<TodoItem>) {
 }
 
 @Composable
-fun TodoClearAllButton(modifier: Modifier = Modifier) {
+fun TodoClearAllButton(modifier: Modifier = Modifier, clearAll: () -> Unit, color: Color) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.End
     ) {
-        TextButton(onClick = {}) {
+        TextButton(onClick = {clearAll()}) {
             Text(
                 text = "Clear All",
-                color = Color(0, 150, 255)
+                color = color
             )
         }
     }
