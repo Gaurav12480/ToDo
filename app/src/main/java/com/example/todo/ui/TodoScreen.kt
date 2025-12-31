@@ -1,6 +1,5 @@
 package com.example.todo.ui
 
-import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -43,18 +42,35 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.room.Room
 import com.example.todo.R
-import com.example.todo.model.TodoItem
+import com.example.todo.database.TodoEntity
+import com.example.todo.database.TodoRepository
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flowOf
+import kotlin.collections.listOf
+import kotlin.jvm.java
+import kotlin.reflect.KClass
+
+
 
 @Composable
-fun TodoListPage(modifier: Modifier = Modifier, todoViewModel: TodoViewModel = viewModel()) {
-    val todoList by todoViewModel.todoListState.collectAsState()
+fun TodoListPage(
+    modifier: Modifier = Modifier,
+    addTodo: (String) -> Unit,
+    deleteTodo: (TodoEntity) -> Unit,
+    todoItemsFlow: Flow<List<TodoEntity>> = flowOf(listOf()),
+    clearAll: () -> Unit,
+    onCheckedChange: (TodoEntity) -> Unit
+) {
+    val todos = todoItemsFlow.collectAsState(initial = listOf()).value
     Scaffold(
         modifier = modifier.safeDrawingPadding(),
         topBar = { TodoTopAppBar() },
         bottomBar = {
             TodoAddItem(
-                onAddTodo = { todoViewModel.addTodo(it) }
+                onAddTodo = { addTodo(it) }
 
             )
         }
@@ -66,18 +82,17 @@ fun TodoListPage(modifier: Modifier = Modifier, todoViewModel: TodoViewModel = v
                 .fillMaxSize()
         ) {
             TodoClearAllButton(
-                clearAll = {
-                    todoViewModel.clearAll()
-                },
-                color = if (todoList.isNotEmpty()) {
+                clearAll = clearAll,
+                color = if (todos.isNotEmpty()) {
                     Color(0, 150, 255)
                 } else {
                     Color(192, 192, 192)
                 }
             )
             TodoList(
-                list = todoList,
-                delete = { todoViewModel.deleteTodo(id = it) }
+                list = todos,
+                delete = deleteTodo,
+                onCheckedChange = onCheckedChange
             )
         }
     }
@@ -122,26 +137,25 @@ fun TodoAddItem(modifier: Modifier = Modifier, onAddTodo: (String) -> Unit) {
 }
 
 @Composable
-fun TodoList(modifier: Modifier = Modifier, list: List<TodoItem>, delete: (Int) -> Unit) {
+fun TodoList(modifier: Modifier = Modifier, list: List<TodoEntity>, onCheckedChange: (TodoEntity) -> Unit, delete: (TodoEntity) -> Unit) {
     Column(modifier = modifier.verticalScroll(rememberScrollState())) {
         list.forEach { ele ->
             Box(modifier = Modifier.fillMaxWidth()) {
-                var check: Boolean by rememberSaveable{mutableStateOf(ele.isDone)}
                 Checkbox(
-                    checked = check,
-                    onCheckedChange = {check = !check},
+                    checked = ele.isDone,
+                    onCheckedChange = { onCheckedChange(ele) },
                     modifier = Modifier.align(Alignment.CenterStart)
                 )
                 Text(
-                    text = ele.text,
+                    text = ele.task,
                     fontSize = 24.sp,
                     modifier = Modifier
                         .padding(horizontal = 44.dp)
                         .align(Alignment.CenterStart),
-                    textDecoration = if (check) TextDecoration.LineThrough else TextDecoration.None
+                    textDecoration = if (ele.isDone) TextDecoration.LineThrough else TextDecoration.None
                 )
                 IconButton(
-                    onClick = {delete(ele.id)},
+                    onClick = { delete(ele) },
                     modifier = Modifier.align(Alignment.CenterEnd)
                 ) {
                     Icon(
@@ -201,5 +215,5 @@ fun TodoTopAppBar(modifier: Modifier = Modifier) {
 @Preview
 @Composable
 private fun TodoListPagePreview() {
-    TodoListPage()
+
 }

@@ -5,21 +5,25 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.room.Room
+import com.example.todo.database.TodoDatabase
+import com.example.todo.database.TodoRepository
 import com.example.todo.ui.TodoListPage
+import com.example.todo.ui.TodoViewModel
 import com.example.todo.ui.theme.ToDoTheme
+import kotlinx.coroutines.Dispatchers
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        val db = Room
+            .databaseBuilder(applicationContext, TodoDatabase::class.java, "todo-db")
+        val todoViewModel = TodoViewModel(TodoRepository(db.build().todoDao()), Dispatchers.IO)
+
         enableEdgeToEdge()
         setContent {
             ToDoTheme {
@@ -27,7 +31,13 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    TodoListPage()
+                    TodoListPage(
+                        addTodo = todoViewModel::addTodo,
+                        deleteTodo = todoViewModel::deleteTodo,
+                        todoItemsFlow = todoViewModel.todos,
+                        clearAll = todoViewModel::clearAll,
+                        onCheckedChange = todoViewModel::toggleTodo
+                    )
                 }
             }
         }

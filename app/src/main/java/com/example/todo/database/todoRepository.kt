@@ -1,5 +1,5 @@
-import com.example.todo.database.TodoDao
-import com.example.todo.database.TodoEntity
+package com.example.todo.database
+
 import kotlinx.coroutines.flow.Flow
 
 
@@ -12,5 +12,8 @@ class TodoRepository(private val todoDao: TodoDao) {
 
     suspend fun delete(todo: TodoEntity) {
         todoDao.delete(todo)
+    }
+    suspend fun deleteAll() {
+        todoDao.deleteAll()
     }
 }
